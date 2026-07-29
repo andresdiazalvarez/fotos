@@ -1,0 +1,66 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#e8453c">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-title" content="MarcaFácil">
+  <title>MarcaFácil — Anota imágenes y PDF</title>
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="apple-touch-icon" href="./apple-touch-icon.png">
+  <link rel="stylesheet" href="./app.css">
+</head>
+<body>
+  <header>
+    <div class="brand"><b>M</b><span><strong>MarcaFácil</strong><small>Anota cualquier documento</small></span></div>
+    <div class="head-actions"><button id="install" class="install">⇩ Instalar app</button><button id="openTop" class="primary">＋ Abrir archivo</button></div>
+  </header>
+  <main>
+    <aside>
+      <nav id="tools">
+        <button data-tool="pen" class="active"><b>✎</b>Dibujar</button>
+        <button data-tool="line"><b>╱</b>Línea</button>
+        <button data-tool="circle"><b>○</b>Círculo</button>
+        <button data-tool="text"><b>T</b>Texto</button>
+        <button data-tool="eraser"><b>⌫</b>Borrar</button>
+      </nav>
+      <section><label>Color</label><div id="colors"></div><input id="customColor" type="color" value="#e8453c"></section>
+      <section><label>Grosor <output id="sizeOut">6</output></label><input id="size" type="range" min="2" max="30" value="6"></section>
+      <section id="textBox" hidden><label>Texto</label><input id="text" placeholder="Escribe y toca el documento"><label>Tamaño <output id="fontOut">36</output></label><input id="fontSize" type="range" min="16" max="96" value="36"></section>
+      <div class="history"><button id="undo">↶ Deshacer</button><button id="redo">↷ Rehacer</button></div>
+    </aside>
+    <article>
+      <div class="filebar">
+        <div><strong id="fileName">Sin archivo</strong><small id="status">Abre un archivo para empezar</small></div>
+        <div class="file-actions">
+          <span id="folderNav" hidden><button id="prev">‹</button><i id="folderCount"></i><button id="next">›</button></span>
+          <button id="change" hidden>↻ Cambiar</button><button id="remove" class="danger" hidden>× Eliminar</button>
+          <button id="png" disabled>↓ PNG</button><button id="pdf" class="dark" disabled>↓ PDF</button>
+        </div>
+      </div>
+      <div class="stage">
+        <div id="empty">
+          <div class="paper">✎</div>
+          <h1>Abre un documento y empieza a marcar</h1>
+          <p>PDF, JPG, PNG y otros formatos de imagen. Tus archivos permanecen en tu dispositivo.</p>
+          <div class="sources">
+            <button id="choose"><b>＋</b><span>Elegir archivo<small>Imagen o PDF</small></span></button>
+            <button id="camera"><b>●</b><span>Hacer una foto<small>Usar la cámara</small></span></button>
+            <button id="folder"><b>▰</b><span>Abrir carpeta<small>Varios archivos</small></span></button>
+            <button id="blank"><b>□</b><span>Hoja en blanco<small>Empezar desde cero</small></span></button>
+          </div>
+          <div class="chips"><span>☝ Dedo</span><span>✎ Puntero</span><span>⌁ Ratón</span></div>
+        </div>
+        <canvas id="canvas" width="1200" height="780"></canvas>
+      </div>
+    </article>
+  </main>
+  <input id="fileInput" type="file" accept="image/*,.pdf,application/pdf" hidden>
+  <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
+  <input id="folderInput" type="file" accept="image/*,.pdf,application/pdf" webkitdirectory multiple hidden>
+  <dialog id="installHelp"><button class="close">×</button><h2>Instalar MarcaFácil</h2><p><b>Android:</b> abre el menú ⋮ y pulsa «Instalar aplicación».</p><p><b>iPhone/iPad:</b> pulsa Compartir y «Añadir a pantalla de inicio».</p></dialog>
+  <script src="./vendor/jspdf.umd.min.js"></script>
+  <script type="module" src="./app.js"></script>
+</body>
+</html>
