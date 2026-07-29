@@ -1,4 +1,4 @@
-const C="marcafacil-github-v2",A=["./","./index.html","./app.css","./app.js","./manifest.webmanifest","./icon-192.png","./icon-512.png","./vendor/pdf.min.mjs","./vendor/pdf.worker.min.mjs","./vendor/jspdf.umd.min.js"];
+const C="marcafacil-github-v3",A=["./","./index.html","./app.css","./app.js","./manifest.webmanifest","./icon-192.png","./icon-512.png","./vendor/pdf.min.mjs","./vendor/pdf.worker.min.mjs","./vendor/jspdf.umd.min.js"];
 self.addEventListener("install",e=>{
   e.waitUntil(caches.open(C).then(c=>c.addAll(A)));
   self.skipWaiting();
