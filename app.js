@@ -1,8 +1,8 @@
 import * as pdfjs from "./vendor/pdf.min.mjs";
 pdfjs.GlobalWorkerOptions.workerSrc="./vendor/pdf.worker.min.mjs";
 const $=id=>document.getElementById(id), canvas=$("canvas"),ctx=canvas.getContext("2d");
-const colors=["#17262e","#e8453c","#f39a22","#e6cc35","#2da66f","#2687d7","#7555c7","#ffffff"];
-let tool="pen",color="#e8453c",size=6,fontSize=36,hasDoc=false,start=null,drawing=false,base=null,history=[],hi=-1,folderFiles=[],folderIndex=0,installPrompt=null;
+const colors=["#17262e","#b83248","#f39a22","#e6cc35","#2da66f","#2687d7","#7555c7","#ffffff"];
+let tool="pen",color="#b83248",size=6,fontSize=36,hasDoc=false,start=null,drawing=false,base=null,history=[],hi=-1,folderFiles=[],folderIndex=0,installPrompt=null;
 function save(){history=history.slice(0,hi+1);history.push(ctx.getImageData(0,0,canvas.width,canvas.height));if(history.length>25)history.shift();hi=history.length-1}
 function restore(i){if(history[i]){ctx.putImageData(history[i],0,0);hi=i}}
 function point(e){let r=canvas.getBoundingClientRect();return{x:(e.clientX-r.left)*canvas.width/r.width,y:(e.clientY-r.top)*canvas.height/r.height}}
