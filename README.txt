@@ -1,4 +1,4 @@
-MARCAFÁCIL PARA GITHUB PAGES
+FOTOS PARA GITHUB PAGES
 
 1. Crea un repositorio nuevo en GitHub.
 2. Sube TODO el contenido de esta carpeta a la raíz del repositorio.

@@ -25,7 +25,7 @@ $("tools").onclick=e=>{let b=e.target.closest("[data-tool]");if(!b)return;tool=b
 const colorBox=$("colors");colors.forEach(c=>{let b=document.createElement("button");b.style.background=c;b.onclick=()=>{color=c;document.querySelectorAll("#colors button").forEach(x=>x.classList.toggle("selected",x===b))};colorBox.append(b)});colorBox.children[1].classList.add("selected");
 $("customColor").oninput=e=>color=e.target.value;$("size").oninput=e=>{size=+e.target.value;$("sizeOut").value=size};$("fontSize").oninput=e=>{fontSize=+e.target.value;$("fontOut").value=fontSize};
 $("undo").onclick=()=>{if(hi>0)restore(hi-1)};$("redo").onclick=()=>{if(hi<history.length-1)restore(hi+1)};
-$("png").onclick=()=>{let a=document.createElement("a");a.download="marcafacil-marcado.png";a.href=canvas.toDataURL();a.click()};
-$("pdf").onclick=()=>{let {jsPDF}=window.jspdf,p=new jsPDF({orientation:canvas.width>=canvas.height?"landscape":"portrait",unit:"px",format:[canvas.width,canvas.height]});p.addImage(canvas.toDataURL("image/jpeg",.95),"JPEG",0,0,canvas.width,canvas.height);p.save("marcafacil-marcado.pdf")};
+$("png").onclick=()=>{let a=document.createElement("a");a.download="fotos-marcado.png";a.href=canvas.toDataURL();a.click()};
+$("pdf").onclick=()=>{let {jsPDF}=window.jspdf,p=new jsPDF({orientation:canvas.width>=canvas.height?"landscape":"portrait",unit:"px",format:[canvas.width,canvas.height]});p.addImage(canvas.toDataURL("image/jpeg",.95),"JPEG",0,0,canvas.width,canvas.height);p.save("fotos-marcado.pdf")};
 window.addEventListener("beforeinstallprompt",e=>{e.preventDefault();installPrompt=e});$("install").onclick=async()=>{if(installPrompt){await installPrompt.prompt();installPrompt=null}else $("installHelp").showModal()};document.querySelector(".close").onclick=()=>$("installHelp").close();
 ctx.fillStyle="#fff";ctx.fillRect(0,0,canvas.width,canvas.height);if("serviceWorker"in navigator)navigator.serviceWorker.register("./sw.js");

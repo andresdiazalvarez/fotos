@@ -1,6 +1,6 @@
 {
-  "name":"MarcaFácil — Anota imágenes y PDF",
-  "short_name":"MarcaFácil",
+  "name":"Fotos — Anota imágenes y PDF",
+  "short_name":"Fotos",
   "start_url":"./",
   "scope":"./",
   "display":"standalone",
