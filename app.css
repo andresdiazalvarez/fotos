@@ -5,3 +5,4 @@
 .brand>b,.primary{background:var(--coral-gradient)}
 .sources button>b{background:var(--coral-gradient);color:#fff}
 .primary:hover,.sources button:hover>b{filter:brightness(.92)}
+.file-actions .share{background:var(--coral-gradient);color:#fff}
