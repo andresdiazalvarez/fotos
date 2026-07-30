@@ -8,3 +8,48 @@
 .file-actions .share{background:var(--coral-gradient);color:#fff}
 .zoom-controls{position:sticky;z-index:4;top:8px;left:calc(100% - 150px);align-self:start;justify-self:end;display:flex;gap:3px;padding:4px;background:#fffdf8ee;border:1px solid #ccd2cf;border-radius:11px;box-shadow:0 5px 18px #17262e1f}.zoom-controls button{min-width:34px;height:32px;background:#f0eee7}.zoom-controls #zoomValue{min-width:55px;font-size:10px}
 canvas.show{max-width:none;max-height:none;width:100%}
+
+/* Interfaz compacta: todas las herramientas quedan visibles sin desplazamiento horizontal. */
+header{display:none}
+main{height:100vh;grid-template-columns:188px minmax(0,1fr)}
+aside{padding:9px;gap:8px}
+nav{grid-template-columns:1fr;gap:4px}
+nav button{height:34px;padding:4px 9px;flex-direction:row;justify-content:flex-start;gap:8px}
+nav button b{width:22px;font-size:19px;text-align:center}
+aside section{padding-top:7px}
+aside label{font-size:10px;margin-bottom:5px}
+#colors{flex-wrap:nowrap;gap:3px;margin-bottom:4px}
+#colors button{flex:0 0 16px;width:16px;height:16px}
+#customColor{flex:0 0 16px;width:16px;height:16px;border:0;padding:0}
+#text{padding:6px;margin-bottom:5px;font-size:11px}
+.history{margin-top:0;gap:5px}
+.history button{padding:7px 2px;font-size:9px}
+.filebar{min-height:50px;padding:6px 10px;gap:8px}
+.file-open-group{display:flex;align-items:center;gap:6px;min-width:0}
+.file-info{min-width:0;display:flex;flex-direction:column}
+.file-info strong{max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:10px}
+.file-info small{max-width:170px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:8px;margin-top:1px}
+.file-open-group .primary{flex:0 0 auto;padding:8px 10px;font-size:10px}
+.file-actions{gap:4px}
+.file-actions>button,.file-actions span button{padding:8px;font-size:10px}
+
+@media(max-width:760px){
+  main{height:100vh;grid-template-columns:1fr;grid-template-rows:auto minmax(0,1fr)}
+  aside{padding:6px;gap:5px;overflow:visible;display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);align-items:start;border-right:0;border-bottom:1px solid var(--line)}
+  nav{grid-column:1/-1;display:grid;grid-template-columns:repeat(5,1fr);gap:3px}
+  nav button{width:auto;height:38px;padding:3px;justify-content:center;flex-direction:column;gap:1px;font-size:8px}
+  nav button b{width:auto;font-size:17px}
+  aside section{min-width:0;border:0;border-left:1px solid #ddd;padding:0 0 0 6px}
+  #colors{width:auto;overflow:visible;gap:2px}
+  #colors button{flex:1 1 16px;max-width:20px}
+  #textBox{grid-column:1/-1}
+  .history{grid-column:2;align-self:end}
+  .history button{width:auto;flex:1;height:28px}
+  .filebar{min-height:48px;padding:5px 6px;gap:4px;overflow-x:auto}
+  .file-info strong,.file-info small{max-width:92px}
+  .file-open-group .primary{padding:7px;font-size:9px}
+}
+
+.usage{margin-top:18px}
+.usage>small{display:block;margin-bottom:7px;color:var(--muted);font-size:11px;font-weight:700}
+.usage .chips{margin-top:0}

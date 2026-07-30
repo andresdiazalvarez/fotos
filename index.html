@@ -12,10 +12,6 @@
   <link rel="stylesheet" href="./app.css">
 </head>
 <body>
-  <header>
-    <div class="brand"><b>✎</b><span><strong>Fotos</strong><small>Anota cualquier documento</small></span></div>
-    <div class="head-actions"><button id="install" class="install">⇩ Instalar app</button><button id="openTop" class="primary">＋ Abrir archivo</button></div>
-  </header>
   <main>
     <aside>
       <nav id="tools">
@@ -25,14 +21,17 @@
         <button data-tool="text"><b>T</b>Texto</button>
         <button data-tool="eraser"><b>⌫</b>Borrar</button>
       </nav>
-      <section><label>Color</label><div id="colors"></div><input id="customColor" type="color" value="#dd5f7c"></section>
+      <section><label>Color</label><div id="colors"><input id="customColor" type="color" value="#dd5f7c" aria-label="Otro color"></div></section>
       <section><label>Grosor <output id="sizeOut">6</output></label><input id="size" type="range" min="2" max="30" value="6"></section>
       <section id="textBox" hidden><label>Texto</label><input id="text" placeholder="Escribe y toca el documento"><label>Tamaño <output id="fontOut">36</output></label><input id="fontSize" type="range" min="16" max="96" value="36"></section>
       <div class="history"><button id="undo">↶ Deshacer</button><button id="redo">↷ Rehacer</button></div>
     </aside>
     <article>
       <div class="filebar">
-        <div><strong id="fileName">Sin archivo</strong><small id="status">Abre un archivo para empezar</small></div>
+        <div class="file-open-group">
+          <div class="file-info"><strong id="fileName">Sin archivo</strong><small id="status">Abre un archivo para empezar</small></div>
+          <button id="openTop" class="primary">＋ Abrir archivo</button>
+        </div>
         <div class="file-actions">
           <span id="folderNav" hidden><button id="prev">‹</button><i id="folderCount"></i><button id="next">›</button></span>
           <button id="change" hidden>↻ Cambiar</button><button id="remove" class="danger" hidden>× Eliminar</button>
@@ -50,7 +49,7 @@
             <button id="folder"><b>▰</b><span>Abrir carpeta<small>Varios archivos</small></span></button>
             <button id="blank"><b>□</b><span>Hoja en blanco<small>Empezar desde cero</small></span></button>
           </div>
-          <div class="chips"><span>☝ Dedo</span><span>✎ Puntero</span><span>⌁ Ratón</span></div>
+          <div class="usage"><small>Puede usarse con:</small><div class="chips"><span>☝ Dedo</span><span>✎ Puntero</span><span>⌁ Ratón</span></div></div>
         </div>
         <div id="zoomControls" class="zoom-controls" hidden><button id="zoomOut">−</button><button id="zoomValue">100%</button><button id="zoomIn">＋</button></div>
         <canvas id="canvas" width="1200" height="780"></canvas>
@@ -60,7 +59,6 @@
   <input id="fileInput" type="file" accept="image/*,.pdf,application/pdf" hidden>
   <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
   <input id="folderInput" type="file" accept="image/*,.pdf,application/pdf" webkitdirectory multiple hidden>
-  <dialog id="installHelp"><button class="close">×</button><h2>Instalar Fotos</h2><p><b>Android:</b> abre el menú ⋮ y pulsa «Instalar aplicación».</p><p><b>iPhone/iPad:</b> pulsa Compartir y «Añadir a pantalla de inicio».</p></dialog>
   <script src="./vendor/jspdf.umd.min.js"></script>
   <script type="module" src="./app.js"></script>
 </body>
