@@ -9,7 +9,7 @@
   <title>Fotos — Anota imágenes y PDF</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./app.css">
+  <link rel="stylesheet" href="./app.css?v=10">
 </head>
 <body>
   <main>
@@ -20,6 +20,7 @@
         <button data-tool="circle"><b>○</b>Círculo</button>
         <button data-tool="text"><b>T</b>Texto</button>
         <button data-tool="eraser"><b>⌫</b>Borrar</button>
+        <button data-tool="pan"><b>☝</b>Mover</button>
       </nav>
       <section><label>Color</label><div id="colors"><input id="customColor" type="color" value="#dd5f7c" aria-label="Otro color"></div></section>
       <section><label>Grosor <output id="sizeOut">6</output></label><input id="size" type="range" min="2" max="30" value="6"></section>
@@ -60,6 +61,6 @@
   <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
   <input id="folderInput" type="file" accept="image/*,.pdf,application/pdf" webkitdirectory multiple hidden>
   <script src="./vendor/jspdf.umd.min.js"></script>
-  <script type="module" src="./app.js"></script>
+  <script type="module" src="./app.js?v=10"></script>
 </body>
 </html>
