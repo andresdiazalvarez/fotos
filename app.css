@@ -6,3 +6,5 @@
 .sources button>b{background:var(--coral-gradient);color:#fff}
 .primary:hover,.sources button:hover>b{filter:brightness(.92)}
 .file-actions .share{background:var(--coral-gradient);color:#fff}
+.zoom-controls{position:sticky;z-index:4;top:8px;left:calc(100% - 150px);align-self:start;justify-self:end;display:flex;gap:3px;padding:4px;background:#fffdf8ee;border:1px solid #ccd2cf;border-radius:11px;box-shadow:0 5px 18px #17262e1f}.zoom-controls button{min-width:34px;height:32px;background:#f0eee7}.zoom-controls #zoomValue{min-width:55px;font-size:10px}
+canvas.show{max-width:none;max-height:none;width:100%}
