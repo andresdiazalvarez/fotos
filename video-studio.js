@@ -41,6 +41,7 @@ function openStudio() {
   renderEmojis();
   renderTimeline();
   renderSavedProjects();
+  renderFinishedVideos();
   drawPreview();
 }
 function closeStudio() {
@@ -268,18 +269,28 @@ async function generateVideo() {
   recorder.stop(); await stopped; canvasStream.getTracks().forEach((track) => track.stop()); music?.pause(); if (music?.src.startsWith("blob:")) URL.revokeObjectURL(music.src); audioContext?.close();
   generatedBlob = new Blob(chunks, { type: recorder.mimeType || "video/webm" });
   const preview = byId("generatedVideo"); if (preview.src) URL.revokeObjectURL(preview.src); preview.src = URL.createObjectURL(generatedBlob); preview.hidden = false;
-  byId("shareVideo").disabled = false; byId("downloadVideo").disabled = false; byId("generateVideo").disabled = false; byId("videoProgress").value = 100;
+  byId("downloadVideo").disabled = false; byId("generateVideo").disabled = false; byId("videoProgress").value = 100;
   setStatus(totalDuration() > MAX_SECONDS ? "Vídeo creado. Se han utilizado los primeros 60 segundos." : "Vídeo creado. Ya puedes guardarlo o compartirlo.");
 }
 byId("generateVideo").onclick = generateVideo;
 
 function outputExtension() { return generatedBlob?.type.includes("mp4") ? "mp4" : "webm"; }
-byId("downloadVideo").onclick = () => { if (!generatedBlob) return; const anchor = document.createElement("a"); anchor.href = URL.createObjectURL(generatedBlob); anchor.download = `${safeName(byId("videoProjectName").value)}.${outputExtension()}`; anchor.click(); setTimeout(() => URL.revokeObjectURL(anchor.href), 2000); };
-byId("shareVideo").onclick = async () => {
-  if (!generatedBlob) return; const file = new File([generatedBlob], `${safeName(byId("videoProjectName").value)}.${outputExtension()}`, { type: generatedBlob.type });
-  try { if (navigator.canShare?.({ files: [file] })) { await navigator.share({ title: "Mi estado", text: "Vídeo creado con Fotos", files: [file] }); setStatus("Elige WhatsApp y después Mi estado"); } else { byId("downloadVideo").click(); setStatus("Se ha guardado el vídeo. Ábrelo en WhatsApp y elige Mi estado."); } } catch (error) { if (error.name !== "AbortError") setStatus("No se pudo abrir el menú de compartir"); }
-};
+function downloadBlob(blob, name) {
+  const extension = blob.type.includes("mp4") ? "mp4" : "webm";
+  const anchor = document.createElement("a"); anchor.href = URL.createObjectURL(blob); anchor.download = `${safeName(name)}.${extension}`; anchor.click(); setTimeout(() => URL.revokeObjectURL(anchor.href), 2000);
+}
 
+byId("downloadVideo").onclick = async () => {
+  if (!generatedBlob) return;
+  const proposed = byId("videoProjectName").value || "Mi estado";
+  const name = window.prompt("Escribe un nombre para guardar el vídeo:", proposed);
+  if (name === null) return;
+  const cleanName = name.trim(); if (!cleanName) return setStatus("Es necesario escribir un nombre");
+  byId("videoProjectName").value = cleanName;
+  const record = { id: uid(), kind: "video", name: cleanName, created: Date.now(), updated: Date.now(), used: false, usedAt: null, musicBlob, musicFileName, generatedBlob, items: items.map(({ url, ...item }) => item) };
+  try { await dbAction("readwrite", (store) => store.put(record)); await renderFinishedVideos(); await renderSavedProjects(); downloadBlob(generatedBlob, cleanName); setStatus(`Vídeo "${cleanName}" guardado en la lista y en el dispositivo.`); }
+  catch { setStatus("No se pudo guardar el vídeo. Puede faltar espacio en el dispositivo."); }
+};
 function safeName(value) { return (value || "mi-estado").trim().replace(/[^a-z0-9áéíóúñ_-]+/gi, "-").replace(/^-|-$/g, "") || "mi-estado"; }
 function escapeHtml(value) { return String(value).replace(/[&<>"']/g, (char) => ({ "&":"&amp;", "<":"&lt;", ">":"&gt;", "\"":"&quot;", "'":"&#39;" }[char])); }
 
@@ -291,14 +302,14 @@ async function dbAction(mode, action) { const database = await db(); return new 
 byId("saveVideoProject").onclick = async () => {
   if (!items.length) return setStatus("Añade contenido antes de guardar");
   const id = byId("videoProjectName").dataset.id || uid(); byId("videoProjectName").dataset.id = id;
-  const record = { id, name: byId("videoProjectName").value || "Mi estado", updated: Date.now(), musicBlob, musicFileName, generatedBlob, items: items.map(({ url, ...item }) => item) };
+  const record = { id, kind: "project", name: byId("videoProjectName").value || "Mi estado", created: Date.now(), updated: Date.now(), used: false, usedAt: null, musicBlob, musicFileName, generatedBlob, items: items.map(({ url, ...item }) => item) };
   try { await dbAction("readwrite", (store) => store.put(record)); setStatus("Proyecto guardado. Podrás abrirlo y modificarlo."); renderSavedProjects(); } catch { setStatus("No se pudo guardar. Puede faltar espacio en el dispositivo."); }
 };
 
 async function renderSavedProjects() {
   const holder = byId("savedVideoProjects");
   try {
-    const projects = await dbAction("readonly", (store) => store.getAll()); holder.innerHTML = "";
+    const allRecords = await dbAction("readonly", (store) => store.getAll()); const projects = allRecords.filter((project) => project.kind !== "video"); holder.innerHTML = "";
     if (!projects.length) return holder.innerHTML = "<small>Todavía no hay proyectos guardados.</small>";
     projects.sort((a,b) => b.updated - a.updated).forEach((project) => {
       const row = document.createElement("div"); row.className = "saved-project"; row.innerHTML = `<span><b>${escapeHtml(project.name)}</b><small>${project.items.length} partes</small></span><button data-open>Abrir</button><button data-delete>×</button>`;
@@ -309,15 +320,37 @@ async function renderSavedProjects() {
   } catch { holder.innerHTML = "<small>No se pueden leer los proyectos guardados.</small>"; }
 }
 
+function formattedDate(value) {
+  return new Intl.DateTimeFormat("es-ES", { dateStyle: "short", timeStyle: "short" }).format(new Date(value || Date.now()));
+}
+
+async function renderFinishedVideos() {
+  const holder = byId("finishedVideoList");
+  try {
+    const records = await dbAction("readonly", (store) => store.getAll()); const videos = records.filter((record) => record.generatedBlob).sort((a,b) => (b.created || b.updated) - (a.created || a.updated)); holder.innerHTML = "";
+    if (!videos.length) return holder.innerHTML = "<small>Todavía no hay vídeos guardados.</small>";
+    videos.forEach((project) => {
+      const row = document.createElement("article"); row.className = `finished-video ${project.used ? "is-used" : ""}`;
+      row.innerHTML = `<div class="finished-video-info"><b>${escapeHtml(project.name)}</b><small>Creado: ${formattedDate(project.created || project.updated)}${project.usedAt ? `<br>Usado: ${formattedDate(project.usedAt)}` : ""}</small></div><label class="used-check"><input type="checkbox" ${project.used ? "checked" : ""}> Ya lo he usado</label><div class="finished-video-actions"><button data-open>Abrir y modificar</button><button data-play>Ver</button><button data-download>Descargar</button><button data-delete class="mini-danger">×</button></div>`;
+      row.querySelector(".used-check input").onchange = async (event) => { project.used = event.target.checked; project.usedAt = project.used ? Date.now() : null; await dbAction("readwrite", (store) => store.put(project)); renderFinishedVideos(); };
+      row.querySelector("[data-open]").onclick = () => loadProject(project);
+      row.querySelector("[data-play]").onclick = () => { const preview = byId("generatedVideo"); if (preview.src) URL.revokeObjectURL(preview.src); preview.src = URL.createObjectURL(project.generatedBlob); preview.hidden = false; preview.scrollIntoView({ behavior: "smooth", block: "center" }); preview.play().catch(() => undefined); };
+      row.querySelector("[data-download]").onclick = () => downloadBlob(project.generatedBlob, project.name);
+      row.querySelector("[data-delete]").onclick = async () => { if (!confirm(`¿Eliminar "${project.name}" de la lista?`)) return; await dbAction("readwrite", (store) => store.delete(project.id)); renderFinishedVideos(); renderSavedProjects(); };
+      holder.append(row);
+    });
+  } catch { holder.innerHTML = "<small>No se puede leer la lista de vídeos.</small>"; }
+}
+
 function loadProject(project) {
   revokeItems(); items = project.items.map((item) => ({ ...item, url: URL.createObjectURL(item.blob), strokes: item.strokes || [] })); selected = items.length ? 0 : -1; musicBlob = project.musicBlob || null; musicFileName = project.musicFileName || ""; generatedBlob = project.generatedBlob || null;
   byId("videoProjectName").value = project.name; byId("videoProjectName").dataset.id = project.id; byId("musicName").textContent = musicFileName ? `Música: ${musicFileName}` : "Sin música";
-  if (generatedBlob) { const preview = byId("generatedVideo"); preview.src = URL.createObjectURL(generatedBlob); preview.hidden = false; byId("shareVideo").disabled = byId("downloadVideo").disabled = false; }
+  if (generatedBlob) { const preview = byId("generatedVideo"); preview.src = URL.createObjectURL(generatedBlob); preview.hidden = false; byId("downloadVideo").disabled = false; }
   updateEditor(); renderTimeline(); drawPreview(); setStatus("Proyecto abierto. Puedes modificar cualquier parte.");
 }
 
 function newProject() {
-  revokeItems(); items = []; selected = -1; musicBlob = generatedBlob = null; musicFileName = ""; byId("musicName").textContent = "Sin música"; byId("videoProjectName").value = "Mi estado"; byId("videoProjectName").dataset.id = ""; byId("generatedVideo").hidden = true; byId("shareVideo").disabled = byId("downloadVideo").disabled = true; byId("videoProgress").value = 0; updateEditor(); renderTimeline(); drawPreview(); setStatus("Proyecto nuevo");
+  revokeItems(); items = []; selected = -1; musicBlob = generatedBlob = null; musicFileName = ""; byId("musicName").textContent = "Sin música"; byId("videoProjectName").value = "Mi estado"; byId("videoProjectName").dataset.id = ""; byId("generatedVideo").hidden = true; byId("downloadVideo").disabled = true; byId("videoProgress").value = 0; updateEditor(); renderTimeline(); drawPreview(); setStatus("Proyecto nuevo");
 }
 byId("newVideoProject").onclick = newProject;
 
