@@ -9,7 +9,7 @@
   <title>Fotos — Anota imágenes y PDF</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./app.css?v=10">
+  <link rel="stylesheet" href="./app.css?v=11">
 </head>
 <body>
   <main>
@@ -49,6 +49,7 @@
             <button id="camera"><b>●</b><span>Hacer una foto<small>Usar la cámara</small></span></button>
             <button id="folder"><b>▰</b><span>Abrir carpeta<small>Varios archivos</small></span></button>
             <button id="blank"><b>□</b><span>Hoja en blanco<small>Empezar desde cero</small></span></button>
+            <button id="createVideo" class="video-source"><b>▶</b><span>Crear vídeo<small>Para tu estado</small></span></button>
           </div>
           <div class="usage"><small>Puede usarse con:</small><div class="chips"><span>☝ Dedo</span><span>✎ Puntero</span><span>⌁ Ratón</span></div></div>
         </div>
@@ -60,7 +61,29 @@
   <input id="fileInput" type="file" accept="image/*,.pdf,application/pdf" hidden>
   <input id="cameraInput" type="file" accept="image/*" capture="environment" hidden>
   <input id="folderInput" type="file" accept="image/*,.pdf,application/pdf" webkitdirectory multiple hidden>
+  <section id="videoStudio" class="video-studio" hidden aria-label="Editor de vídeo">
+    <header class="studio-header">
+      <button id="closeStudio" class="studio-back">‹ Volver</button>
+      <div><strong>Crear vídeo</strong><small>Estado de WhatsApp · máximo 60 segundos</small></div>
+      <button id="newVideoProject" class="studio-light">Nuevo</button>
+    </header>
+    <div class="studio-layout">
+      <aside class="studio-sidebar">
+        <div class="studio-block"><h3>1. Añadir contenido</h3><div class="studio-add-row"><button id="addVideoMedia" class="studio-primary">＋ Fotos, vídeos o PDF</button><button id="addVideoMusic">♫ Música</button></div><input id="videoMediaInput" type="file" accept="image/*,video/*,.pdf,application/pdf" multiple hidden><input id="videoMusicInput" type="file" accept="audio/*" hidden><small id="musicName" class="studio-note">Sin música</small></div>
+        <div class="studio-block edit-block"><h3>2. Modificar la parte elegida</h3><label>Texto <input id="videoText" type="text" placeholder="Escribe sobre la imagen o vídeo"></label><div class="studio-inline"><label>Color <input id="videoTextColor" type="color" value="#ffffff"></label><label>Tamaño <input id="videoTextSize" type="range" min="22" max="100" value="48"></label></div><label>Duración <span><input id="videoDuration" type="number" min="1" max="60" value="4"> segundos</span></label><div class="draw-tools"><button data-video-tool="move" class="active">☝ Mover texto</button><button data-video-tool="pen">✎ Dibujar</button><button data-video-tool="eraser">⌫ Borrar trazo</button><input id="videoDrawColor" type="color" value="#dd5f7c" aria-label="Color del dibujo"><input id="videoDrawSize" type="range" min="2" max="30" value="8" aria-label="Grosor del dibujo"></div></div>
+        <div class="studio-block emoji-block"><h3>3. Emoticonos</h3><input id="emojiSearch" type="search" placeholder="Buscar: corazón, fiesta, trabajo…"><div id="emojiGrid" class="emoji-grid"></div><small class="studio-note">Toca un emoticono para colocarlo. Se guardará entre tus usados.</small></div>
+        <div class="studio-block saved-block"><h3>Vídeos y proyectos guardados</h3><label>Nombre <input id="videoProjectName" value="Mi estado"></label><button id="saveVideoProject">▣ Guardar para seguir modificando</button><div id="savedVideoProjects" class="saved-projects"><small>Todavía no hay proyectos guardados.</small></div></div>
+      </aside>
+      <main class="studio-workspace">
+        <div class="video-preview-wrap"><canvas id="videoCanvas" width="720" height="1280" aria-label="Vista previa del vídeo"></canvas><span id="videoEmptyHint">Añade fotos o vídeos para empezar</span></div>
+        <div class="timeline-head"><strong>Partes del vídeo</strong><span id="videoTotal">0 / 60 s</span></div><div id="videoTimeline" class="video-timeline"></div>
+        <div class="studio-actions"><button id="deleteVideoPart" class="studio-danger" disabled>× Borrar esta parte</button><button id="generateVideo" class="studio-primary" disabled>▶ Crear vídeo</button><button id="shareVideo" disabled>↗ Compartir en WhatsApp</button><button id="downloadVideo" disabled>↓ Guardar vídeo</button></div>
+        <div class="render-status"><progress id="videoProgress" max="100" value="0"></progress><span id="videoStatus">Listo para empezar</span></div><video id="generatedVideo" controls playsinline hidden></video>
+      </main>
+    </div>
+  </section>
   <script src="./vendor/jspdf.umd.min.js"></script>
-  <script type="module" src="./app.js?v=10"></script>
+  <script type="module" src="./app.js?v=11"></script>
+  <script type="module" src="./video-studio.js?v=11"></script>
 </body>
 </html>
