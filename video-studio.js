@@ -88,7 +88,7 @@ byId("videoMediaInput").onchange = async (event) => {
   }
   if (addedItems.length) {
     if (insertBeforeSelection && selected >= 0) { const position = selected; items.splice(position, 0, ...addedItems); selected = position; setStatus(`${addedItems.length} archivo${addedItems.length > 1 ? "s" : ""} insertado${addedItems.length > 1 ? "s" : ""} antes de la parte marcada`); }
-    else { const firstAdded = items.length; items.push(...addedItems); selected = firstAdded; }
+    else { const firstAdded = items.length; items.push(...addedItems); selected = firstAdded; setStatus(`${addedItems.length} archivo${addedItems.length > 1 ? "s" : ""} añadido${addedItems.length > 1 ? "s" : ""}. El vídeo tiene ${items.length} parte${items.length > 1 ? "s" : ""}.`); }
   }
   insertBeforeSelection = false;
   event.target.value = "";
@@ -248,8 +248,15 @@ byId("emojiSearch").oninput = renderEmojis;
 function waitFrame() { return new Promise((resolve) => requestAnimationFrame(resolve)); }
 function waitBriefly(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 function requestCanvasFrame(track) { try { track?.requestFrame?.(); } catch {} }
-function recorderMime() {
-  return ["video/webm;codecs=vp8,opus","video/webm;codecs=vp8","video/webm","video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4"].find((type) => MediaRecorder.isTypeSupported(type)) || "";
+function createRecorder(stream, hasAudio) {
+  const types = hasAudio
+    ? ["video/webm;codecs=vp8,opus","video/webm","video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4"]
+    : ["video/webm;codecs=vp8","video/webm","video/mp4;codecs=avc1.42E01E","video/mp4"];
+  for (const mimeType of types) {
+    if (!MediaRecorder.isTypeSupported(mimeType)) continue;
+    try { return new MediaRecorder(stream, { mimeType, videoBitsPerSecond: 2_500_000 }); } catch {}
+  }
+  return new MediaRecorder(stream);
 }
 
 async function generateVideo() {
@@ -258,12 +265,12 @@ async function generateVideo() {
   let canvasStream = null, canvasTrack = null, audioContext = null, destination = null, music = null, recorder = null;
   try {
     canvasStream = canvas.captureStream(10); canvasTrack = canvasStream.getVideoTracks()[0];
-    try {
+    if (musicBlob) try {
       audioContext = new AudioContext(); destination = audioContext.createMediaStreamDestination(); await audioContext.resume();
-      if (musicBlob) { music = new Audio(URL.createObjectURL(musicBlob)); music.loop = true; music.volume = .8; audioContext.createMediaElementSource(music).connect(destination); await music.play(); }
+      music = new Audio(URL.createObjectURL(musicBlob)); music.loop = true; music.volume = .8; audioContext.createMediaElementSource(music).connect(destination); await music.play();
     } catch { audioContext = destination = music = null; }
     const tracks = [...canvasStream.getVideoTracks(), ...(destination ? destination.stream.getAudioTracks() : [])];
-    const outputStream = new MediaStream(tracks); const mimeType = recorderMime(); recorder = new MediaRecorder(outputStream, mimeType ? { mimeType, videoBitsPerSecond: 4_000_000 } : { videoBitsPerSecond: 4_000_000 });
+    const outputStream = new MediaStream(tracks); recorder = createRecorder(outputStream, Boolean(destination));
     const chunks = []; recorder.ondataavailable = (event) => event.data.size && chunks.push(event.data);
     const stopped = new Promise((resolve) => recorder.onstop = resolve); const startedRecording = new Promise((resolve) => recorder.addEventListener("start", resolve, { once: true })); recorder.start(500); await Promise.race([startedRecording, waitBriefly(800)]);
     let elapsed = 0;
@@ -289,7 +296,7 @@ async function generateVideo() {
     const preview = byId("generatedVideo"); if (preview.src) URL.revokeObjectURL(preview.src); preview.src = URL.createObjectURL(generatedBlob); preview.hidden = false;
     byId("downloadVideo").disabled = false; byId("videoProgress").value = 100; setStatus("Vídeo creado con todas sus partes. Ya puedes guardarlo.");
   } catch (error) {
-    console.error(error); setStatus("No se pudo terminar el vídeo. Prueba de nuevo con Chrome o Edge y mantén esta pantalla abierta.");
+    console.error(error); setStatus(`No se pudo terminar: ${error?.message || "el grabador del móvil no respondió"}.`);
   } finally {
     if (recorder?.state === "recording") try { recorder.stop(); } catch {}
     canvasStream?.getTracks().forEach((track) => track.stop()); music?.pause(); if (music?.src?.startsWith("blob:")) URL.revokeObjectURL(music.src); audioContext?.close(); generateButton.disabled = false;
