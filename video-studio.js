@@ -249,7 +249,7 @@ function waitFrame() { return new Promise((resolve) => requestAnimationFrame(res
 function waitBriefly(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
 function requestCanvasFrame(track) { try { track?.requestFrame?.(); } catch {} }
 function recorderMime() {
-  return ["video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4","video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"].find((type) => MediaRecorder.isTypeSupported(type)) || "";
+  return ["video/webm;codecs=vp8,opus","video/webm;codecs=vp8","video/webm","video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4"].find((type) => MediaRecorder.isTypeSupported(type)) || "";
 }
 
 async function generateVideo() {
@@ -257,7 +257,7 @@ async function generateVideo() {
   const generateButton = byId("generateVideo"); generateButton.disabled = true; byId("videoProgress").value = 0; setStatus("Preparando el vídeo…");
   let canvasStream = null, canvasTrack = null, audioContext = null, destination = null, music = null, recorder = null;
   try {
-    canvasStream = canvas.captureStream(30); canvasTrack = canvasStream.getVideoTracks()[0];
+    canvasStream = canvas.captureStream(10); canvasTrack = canvasStream.getVideoTracks()[0];
     try {
       audioContext = new AudioContext(); destination = audioContext.createMediaStreamDestination(); await audioContext.resume();
       if (musicBlob) { music = new Audio(URL.createObjectURL(musicBlob)); music.loop = true; music.volume = .8; audioContext.createMediaElementSource(music).connect(destination); await music.play(); }
@@ -280,6 +280,8 @@ async function generateVideo() {
         drawFrame(source, item); requestCanvasFrame(canvasTrack); const currentElapsed = elapsed + (performance.now() - partStarted) / 1000; byId("videoProgress").value = currentElapsed / Math.max(totalDuration(), 1) * 100; byId("videoStatus").textContent = `Parte ${index + 1}/${items.length} · ${Math.round(currentElapsed)} de ${Math.ceil(totalDuration())} s`; await waitFrame();
       }
       if (item.type === "video") source.pause(); elapsed += duration;
+      try { recorder.requestData(); } catch {}
+      await waitBriefly(100);
     }
     recorder.stop(); await Promise.race([stopped, waitBriefly(2000)]);
     if (!chunks.length) throw new Error("El grabador no produjo datos");
