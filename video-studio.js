@@ -27,6 +27,7 @@ let tool = "move";
 let drawing = null;
 let generatedBlob = null;
 let previewFrame = 0;
+let insertBeforeSelection = false;
 
 function uid() { return `${Date.now()}-${Math.random().toString(16).slice(2)}`; }
 function clamp(n, min, max) { return Math.min(max, Math.max(min, n)); }
@@ -52,7 +53,7 @@ function closeStudio() {
 
 byId("createVideo").onclick = openStudio;
 byId("closeStudio").onclick = closeStudio;
-byId("addVideoMedia").onclick = () => byId("videoMediaInput").click();
+byId("addVideoMedia").onclick = () => { insertBeforeSelection = false; byId("videoMediaInput").click(); };
 byId("addVideoMusic").onclick = () => byId("videoMusicInput").click();
 
 function fileDuration(file) {
@@ -79,13 +80,18 @@ async function pdfToImage(file) {
 
 byId("videoMediaInput").onchange = async (event) => {
   const files = [...event.target.files].filter((file) => file.type.startsWith("image/") || file.type.startsWith("video/") || file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf"));
+  const addedItems = [];
   for (const file of files) {
     const duration = await fileDuration(file);
     const isPdf = file.type === "application/pdf" || file.name.toLowerCase().endsWith(".pdf");
     const blob = isPdf ? await pdfToImage(file) : file;
-    items.push({ id: uid(), name: isPdf ? `${file.name} (página 1)` : file.name, type: file.type.startsWith("video/") ? "video" : "image", blob, url: URL.createObjectURL(blob), duration: Math.round(duration * 10) / 10, text: "", textColor: "#ffffff", textSize: 48, textX: .5, textY: .78, strokes: [] });
+    addedItems.push({ id: uid(), name: isPdf ? `${file.name} (página 1)` : file.name, type: file.type.startsWith("video/") ? "video" : "image", blob, url: URL.createObjectURL(blob), duration: Math.round(duration * 10) / 10, text: "", textColor: "#ffffff", textSize: 48, textX: .5, textY: .78, strokes: [] });
   }
-  if (files.length) selected = items.length - files.length;
+  if (addedItems.length) {
+    if (insertBeforeSelection && selected >= 0) { const position = selected; items.splice(position, 0, ...addedItems); selected = position; setStatus(`${addedItems.length} archivo${addedItems.length > 1 ? "s" : ""} insertado${addedItems.length > 1 ? "s" : ""} antes de la parte marcada`); }
+    else { const firstAdded = items.length; items.push(...addedItems); selected = firstAdded; }
+  }
+  insertBeforeSelection = false;
   event.target.value = "";
   generatedBlob = null;
   updateEditor(); renderTimeline(); drawPreview();
@@ -226,13 +232,7 @@ function renderTimeline() {
 
 byId("deleteVideoPart").onclick = () => { if (selected < 0) return; const [removed] = items.splice(selected, 1); if (removed?.url) URL.revokeObjectURL(removed.url); selected = Math.min(selected, items.length - 1); generatedBlob = null; updateEditor(); renderTimeline(); drawPreview(); };
 
-byId("insertVideoPhoto").onclick = () => byId("insertVideoPhotoInput").click();
-byId("insertVideoPhotoInput").onchange = (event) => {
-  const file = event.target.files[0]; if (!file || !file.type.startsWith("image/")) return;
-  const inserted = { id: uid(), name: file.name, type: "image", blob: file, url: URL.createObjectURL(file), duration: 4, text: "", textColor: "#ffffff", textSize: 48, textX: .5, textY: .78, strokes: [] };
-  const position = selected >= 0 ? selected : items.length; items.splice(position, 0, inserted); selected = position; generatedBlob = null; event.target.value = "";
-  updateEditor(); renderTimeline(); drawPreview(); setStatus(`Foto insertada en el segundo ${items.slice(0, position).reduce((sum, part) => sum + Number(part.duration || 0), 0).toFixed(1)}`);
-};
+byId("insertVideoPhoto").onclick = () => { insertBeforeSelection = true; byId("videoMediaInput").click(); };
 
 function renderEmojis() {
   const query = byId("emojiSearch").value.trim().toLowerCase();

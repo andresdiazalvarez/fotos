@@ -9,7 +9,7 @@
   <title>Fotos — Anota imágenes y PDF</title>
   <link rel="manifest" href="./manifest.webmanifest">
   <link rel="apple-touch-icon" href="./apple-touch-icon.png">
-  <link rel="stylesheet" href="./app.css?v=15">
+  <link rel="stylesheet" href="./app.css?v=16">
 </head>
 <body>
   <main>
@@ -77,14 +77,14 @@
       <main class="studio-workspace">
         <div class="video-preview-wrap"><canvas id="videoCanvas" width="720" height="1280" aria-label="Vista previa del vídeo"></canvas><span id="videoEmptyHint">Añade fotos o vídeos para empezar</span></div>
         <div class="timeline-head"><strong>Partes del vídeo</strong><div><span id="selectedSecond">Selecciona una parte</span><span id="videoTotal">0 / 60 s</span></div></div><div id="videoTimeline" class="video-timeline"></div>
-        <div class="studio-actions"><button id="deleteVideoPart" class="studio-danger" disabled>× Borrar esta parte</button><button id="insertVideoPhoto" disabled>＋ Insertar foto</button><button id="generateVideo" class="studio-primary" disabled>▶ Crear vídeo</button><button id="downloadVideo" disabled>↓ Guardar vídeo</button><input id="insertVideoPhotoInput" type="file" accept="image/*" hidden></div>
+        <div class="studio-actions"><button id="deleteVideoPart" class="studio-danger" disabled>× Borrar esta parte</button><button id="insertVideoPhoto" disabled>＋ Insertar foto</button><button id="generateVideo" class="studio-primary" disabled>▶ Crear vídeo</button><button id="downloadVideo" disabled>↓ Guardar vídeo</button></div>
         <div class="render-status"><progress id="videoProgress" max="100" value="0"></progress><span id="videoStatus">Listo para empezar</span></div><video id="generatedVideo" controls playsinline hidden></video>
         <section class="finished-videos"><h3>Vídeos guardados</h3><p>Aquí puedes abrirlos de nuevo y marcar los que ya hayas utilizado.</p><div id="finishedVideoList" class="finished-video-list"><small>Todavía no hay vídeos guardados.</small></div></section>
       </main>
     </div>
   </section>
   <script src="./vendor/jspdf.umd.min.js"></script>
-  <script type="module" src="./app.js?v=15"></script>
-  <script type="module" src="./video-studio.js?v=15"></script>
+  <script type="module" src="./app.js?v=16"></script>
+  <script type="module" src="./video-studio.js?v=16"></script>
 </body>
 </html>
