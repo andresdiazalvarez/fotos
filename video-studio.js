@@ -246,43 +246,52 @@ function renderEmojis() {
 byId("emojiSearch").oninput = renderEmojis;
 
 function waitFrame() { return new Promise((resolve) => requestAnimationFrame(resolve)); }
+function waitBriefly(ms) { return new Promise((resolve) => setTimeout(resolve, ms)); }
+function requestCanvasFrame(track) { try { track?.requestFrame?.(); } catch {} }
 function recorderMime() {
   return ["video/mp4;codecs=avc1.42E01E,mp4a.40.2","video/mp4","video/webm;codecs=vp9,opus","video/webm;codecs=vp8,opus","video/webm"].find((type) => MediaRecorder.isTypeSupported(type)) || "";
 }
 
 async function generateVideo() {
   if (!items.length || !canvas.captureStream || !window.MediaRecorder) return setStatus("Este navegador no permite crear vídeos. Usa Chrome o Edge actualizado.");
-  byId("generateVideo").disabled = true; byId("videoProgress").value = 0; setStatus("Preparando el vídeo…");
-  const canvasStream = canvas.captureStream(30); const canvasTrack = canvasStream.getVideoTracks()[0];
-  let audioContext = null, destination = null, music = null;
+  const generateButton = byId("generateVideo"); generateButton.disabled = true; byId("videoProgress").value = 0; setStatus("Preparando el vídeo…");
+  let canvasStream = null, canvasTrack = null, audioContext = null, destination = null, music = null, recorder = null;
   try {
-    audioContext = new AudioContext(); destination = audioContext.createMediaStreamDestination(); await audioContext.resume();
-    if (musicBlob) { music = new Audio(URL.createObjectURL(musicBlob)); music.loop = true; music.volume = .8; audioContext.createMediaElementSource(music).connect(destination); await music.play(); }
-  } catch { audioContext = destination = music = null; }
-  const tracks = [...canvasStream.getVideoTracks(), ...(destination ? destination.stream.getAudioTracks() : [])];
-  const outputStream = new MediaStream(tracks); const mimeType = recorderMime(); const recorder = new MediaRecorder(outputStream, mimeType ? { mimeType, videoBitsPerSecond: 4_000_000 } : { videoBitsPerSecond: 4_000_000 });
-  const chunks = []; recorder.ondataavailable = (event) => event.data.size && chunks.push(event.data);
-  const stopped = new Promise((resolve) => recorder.onstop = resolve); const startedRecording = new Promise((resolve) => recorder.onstart = resolve); recorder.start(500); await startedRecording;
-  let elapsed = 0;
-  for (const item of items) {
-    const duration = Math.max(1, Number(item.duration) || 1); const source = await loadSource(item, true);
-    if (item.type === "video") {
-      source.currentTime = 0;
-      if (audioContext && destination) { try { audioContext.createMediaElementSource(source).connect(destination); source.muted = false; } catch { source.muted = true; } } else source.muted = true;
-      await source.play().catch(() => undefined);
+    canvasStream = canvas.captureStream(30); canvasTrack = canvasStream.getVideoTracks()[0];
+    try {
+      audioContext = new AudioContext(); destination = audioContext.createMediaStreamDestination(); await audioContext.resume();
+      if (musicBlob) { music = new Audio(URL.createObjectURL(musicBlob)); music.loop = true; music.volume = .8; audioContext.createMediaElementSource(music).connect(destination); await music.play(); }
+    } catch { audioContext = destination = music = null; }
+    const tracks = [...canvasStream.getVideoTracks(), ...(destination ? destination.stream.getAudioTracks() : [])];
+    const outputStream = new MediaStream(tracks); const mimeType = recorderMime(); recorder = new MediaRecorder(outputStream, mimeType ? { mimeType, videoBitsPerSecond: 4_000_000 } : { videoBitsPerSecond: 4_000_000 });
+    const chunks = []; recorder.ondataavailable = (event) => event.data.size && chunks.push(event.data);
+    const stopped = new Promise((resolve) => recorder.onstop = resolve); const startedRecording = new Promise((resolve) => recorder.addEventListener("start", resolve, { once: true })); recorder.start(500); await Promise.race([startedRecording, waitBriefly(800)]);
+    let elapsed = 0;
+    for (let index = 0; index < items.length; index++) {
+      const item = items[index]; const duration = Math.max(1, Number(item.duration) || 1); setStatus(`Preparando parte ${index + 1} de ${items.length}…`); const source = await loadSource(item, true);
+      if (item.type === "video") {
+        source.currentTime = 0;
+        if (audioContext && destination) { try { audioContext.createMediaElementSource(source).connect(destination); source.muted = false; } catch { source.muted = true; } } else source.muted = true;
+        await source.play().catch(() => undefined);
+      }
+      drawFrame(source, item); requestCanvasFrame(canvasTrack); await waitFrame(); await waitFrame();
+      const partStarted = performance.now();
+      while ((performance.now() - partStarted) / 1000 < duration) {
+        drawFrame(source, item); requestCanvasFrame(canvasTrack); const currentElapsed = elapsed + (performance.now() - partStarted) / 1000; byId("videoProgress").value = currentElapsed / Math.max(totalDuration(), 1) * 100; byId("videoStatus").textContent = `Parte ${index + 1}/${items.length} · ${Math.round(currentElapsed)} de ${Math.ceil(totalDuration())} s`; await waitFrame();
+      }
+      if (item.type === "video") source.pause(); elapsed += duration;
     }
-    drawFrame(source, item); canvasTrack?.requestFrame?.(); await waitFrame(); await waitFrame();
-    const started = performance.now();
-    while ((performance.now() - started) / 1000 < duration) {
-      drawFrame(source, item); canvasTrack?.requestFrame?.(); const currentElapsed = elapsed + (performance.now() - started) / 1000; byId("videoProgress").value = currentElapsed / Math.max(totalDuration(), 1) * 100; byId("videoStatus").textContent = `Creando… ${Math.round(currentElapsed)} de ${Math.ceil(totalDuration())} s`; await waitFrame();
-    }
-    if (item.type === "video") source.pause(); elapsed += duration;
+    recorder.stop(); await Promise.race([stopped, waitBriefly(2000)]);
+    if (!chunks.length) throw new Error("El grabador no produjo datos");
+    generatedBlob = new Blob(chunks, { type: recorder.mimeType || "video/webm" });
+    const preview = byId("generatedVideo"); if (preview.src) URL.revokeObjectURL(preview.src); preview.src = URL.createObjectURL(generatedBlob); preview.hidden = false;
+    byId("downloadVideo").disabled = false; byId("videoProgress").value = 100; setStatus("Vídeo creado con todas sus partes. Ya puedes guardarlo.");
+  } catch (error) {
+    console.error(error); setStatus("No se pudo terminar el vídeo. Prueba de nuevo con Chrome o Edge y mantén esta pantalla abierta.");
+  } finally {
+    if (recorder?.state === "recording") try { recorder.stop(); } catch {}
+    canvasStream?.getTracks().forEach((track) => track.stop()); music?.pause(); if (music?.src?.startsWith("blob:")) URL.revokeObjectURL(music.src); audioContext?.close(); generateButton.disabled = false;
   }
-  recorder.stop(); await stopped; canvasStream.getTracks().forEach((track) => track.stop()); music?.pause(); if (music?.src.startsWith("blob:")) URL.revokeObjectURL(music.src); audioContext?.close();
-  generatedBlob = new Blob(chunks, { type: recorder.mimeType || "video/webm" });
-  const preview = byId("generatedVideo"); if (preview.src) URL.revokeObjectURL(preview.src); preview.src = URL.createObjectURL(generatedBlob); preview.hidden = false;
-  byId("downloadVideo").disabled = false; byId("generateVideo").disabled = false; byId("videoProgress").value = 100;
-  setStatus("Vídeo creado con todas sus partes. Ya puedes guardarlo.");
 }
 byId("generateVideo").onclick = generateVideo;
 
