@@ -5,7 +5,6 @@ const byId = (id) => document.getElementById(id);
 const studio = byId("videoStudio");
 const canvas = byId("videoCanvas");
 const ctx = canvas.getContext("2d");
-const MAX_SECONDS = 60;
 const DB_NAME = "fotos-video-projects";
 const DB_STORE = "projects";
 const EMOJIS = [
@@ -62,7 +61,7 @@ function fileDuration(file) {
     const video = document.createElement("video");
     const url = URL.createObjectURL(file);
     video.preload = "metadata";
-    video.onloadedmetadata = () => { const value = Number.isFinite(video.duration) ? video.duration : 4; URL.revokeObjectURL(url); resolve(clamp(value, 1, 60)); };
+    video.onloadedmetadata = () => { const value = Number.isFinite(video.duration) ? video.duration : 4; URL.revokeObjectURL(url); resolve(Math.max(1, value)); };
     video.onerror = () => { URL.revokeObjectURL(url); resolve(4); };
     video.src = url;
   });
@@ -125,7 +124,7 @@ function bindItemField(id, prop, transform = (value) => value) {
 bindItemField("videoText", "text");
 bindItemField("videoTextColor", "textColor");
 bindItemField("videoTextSize", "textSize", Number);
-bindItemField("videoDuration", "duration", (value) => clamp(Number(value) || 1, 1, 60));
+bindItemField("videoDuration", "duration", (value) => Math.max(1, Number(value) || 1));
 
 document.querySelector(".draw-tools").onclick = (event) => {
   const button = event.target.closest("[data-video-tool]");
@@ -190,7 +189,9 @@ function drawFrame(source, item) {
 
 async function loadSource(item, autoplay = false) {
   if (item.type === "image") {
-    const image = new Image(); image.src = item.url; await image.decode().catch(() => undefined); return image;
+    const image = new Image();
+    await new Promise((resolve) => { image.onload = resolve; image.onerror = resolve; image.src = item.url; if (image.complete) resolve(); });
+    return image;
   }
   const video = document.createElement("video"); video.src = item.url; video.muted = !autoplay; video.playsInline = true; video.preload = "auto";
   await new Promise((resolve) => { video.onloadeddata = resolve; video.onerror = resolve; });
@@ -224,7 +225,7 @@ function renderTimeline() {
     };
     timeline.append(card);
   });
-  const total = totalDuration(); byId("videoTotal").textContent = `${total.toFixed(1)} / ${MAX_SECONDS} s`; byId("videoTotal").classList.toggle("over", total > MAX_SECONDS);
+  const total = totalDuration(); byId("videoTotal").textContent = `${total.toFixed(1)} s`; byId("videoTotal").classList.remove("over");
   const selectedStart = selected >= 0 ? items.slice(0, selected).reduce((sum, part) => sum + Number(part.duration || 0), 0) : null;
   byId("selectedSecond").textContent = selectedStart === null ? "Selecciona una parte" : `Parte seleccionada: segundo ${selectedStart.toFixed(1)}`;
   updateEditor();
@@ -252,7 +253,7 @@ function recorderMime() {
 async function generateVideo() {
   if (!items.length || !canvas.captureStream || !window.MediaRecorder) return setStatus("Este navegador no permite crear vídeos. Usa Chrome o Edge actualizado.");
   byId("generateVideo").disabled = true; byId("videoProgress").value = 0; setStatus("Preparando el vídeo…");
-  const canvasStream = canvas.captureStream(30);
+  const canvasStream = canvas.captureStream(30); const canvasTrack = canvasStream.getVideoTracks()[0];
   let audioContext = null, destination = null, music = null;
   try {
     audioContext = new AudioContext(); destination = audioContext.createMediaStreamDestination(); await audioContext.resume();
@@ -261,19 +262,19 @@ async function generateVideo() {
   const tracks = [...canvasStream.getVideoTracks(), ...(destination ? destination.stream.getAudioTracks() : [])];
   const outputStream = new MediaStream(tracks); const mimeType = recorderMime(); const recorder = new MediaRecorder(outputStream, mimeType ? { mimeType, videoBitsPerSecond: 4_000_000 } : { videoBitsPerSecond: 4_000_000 });
   const chunks = []; recorder.ondataavailable = (event) => event.data.size && chunks.push(event.data);
-  const stopped = new Promise((resolve) => recorder.onstop = resolve); recorder.start(500);
+  const stopped = new Promise((resolve) => recorder.onstop = resolve); const startedRecording = new Promise((resolve) => recorder.onstart = resolve); recorder.start(500); await startedRecording;
   let elapsed = 0;
   for (const item of items) {
-    const remaining = MAX_SECONDS - elapsed; if (remaining <= 0) break;
-    const duration = Math.min(Number(item.duration) || 1, remaining); const source = await loadSource(item, true);
+    const duration = Math.max(1, Number(item.duration) || 1); const source = await loadSource(item, true);
     if (item.type === "video") {
       source.currentTime = 0;
       if (audioContext && destination) { try { audioContext.createMediaElementSource(source).connect(destination); source.muted = false; } catch { source.muted = true; } } else source.muted = true;
       await source.play().catch(() => undefined);
     }
+    drawFrame(source, item); canvasTrack?.requestFrame?.(); await waitFrame(); await waitFrame();
     const started = performance.now();
     while ((performance.now() - started) / 1000 < duration) {
-      drawFrame(source, item); elapsed += 0; const currentElapsed = Math.min(MAX_SECONDS, elapsed + (performance.now() - started) / 1000); byId("videoProgress").value = currentElapsed / Math.min(totalDuration(), MAX_SECONDS) * 100; byId("videoStatus").textContent = `Creando… ${Math.round(currentElapsed)} de ${Math.min(Math.ceil(totalDuration()), MAX_SECONDS)} s`; await waitFrame();
+      drawFrame(source, item); canvasTrack?.requestFrame?.(); const currentElapsed = elapsed + (performance.now() - started) / 1000; byId("videoProgress").value = currentElapsed / Math.max(totalDuration(), 1) * 100; byId("videoStatus").textContent = `Creando… ${Math.round(currentElapsed)} de ${Math.ceil(totalDuration())} s`; await waitFrame();
     }
     if (item.type === "video") source.pause(); elapsed += duration;
   }
@@ -281,7 +282,7 @@ async function generateVideo() {
   generatedBlob = new Blob(chunks, { type: recorder.mimeType || "video/webm" });
   const preview = byId("generatedVideo"); if (preview.src) URL.revokeObjectURL(preview.src); preview.src = URL.createObjectURL(generatedBlob); preview.hidden = false;
   byId("downloadVideo").disabled = false; byId("generateVideo").disabled = false; byId("videoProgress").value = 100;
-  setStatus(totalDuration() > MAX_SECONDS ? "Vídeo creado. Se han utilizado los primeros 60 segundos." : "Vídeo creado. Ya puedes guardarlo o compartirlo.");
+  setStatus("Vídeo creado con todas sus partes. Ya puedes guardarlo.");
 }
 byId("generateVideo").onclick = generateVideo;
 
