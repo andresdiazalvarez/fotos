@@ -103,7 +103,7 @@ byId("videoMusicInput").onchange = (event) => {
 
 function updateEditor() {
   const item = current();
-  const controls = ["videoText","videoTextColor","videoTextSize","videoDuration","deleteVideoPart"];
+  const controls = ["videoText","videoTextColor","videoTextSize","videoDuration","deleteVideoPart","insertVideoPhoto"];
   controls.forEach((id) => byId(id).disabled = !item);
   byId("generateVideo").disabled = !items.length;
   if (!item) return;
@@ -208,20 +208,31 @@ async function drawPreview() {
 function renderTimeline() {
   const timeline = byId("videoTimeline"); timeline.innerHTML = "";
   items.forEach((item, index) => {
+    const startsAt = items.slice(0, index).reduce((sum, part) => sum + Number(part.duration || 0), 0);
     const card = document.createElement("button"); card.className = `timeline-card ${selected === index ? "selected" : ""}`;
-    card.innerHTML = `<b>${index + 1}</b><span>${item.type === "video" ? "🎬" : "🖼️"} ${escapeHtml(item.name)}<small>${Number(item.duration).toFixed(1)} s</small></span><i data-move="left">‹</i><i data-move="right">›</i>`;
+    card.innerHTML = `<b>${index + 1}</b><span>${item.type === "video" ? "🎬" : "🖼️"} ${escapeHtml(item.name)}<small>Empieza en ${startsAt.toFixed(1)} s · dura ${Number(item.duration).toFixed(1)} s</small></span><i data-move="left">‹</i><i data-move="right">›</i>`;
     card.onclick = (event) => {
       const direction = event.target.dataset.move;
       if (direction) { event.stopPropagation(); const next = direction === "left" ? index - 1 : index + 1; if (next >= 0 && next < items.length) { [items[index], items[next]] = [items[next], items[index]]; selected = next; renderTimeline(); drawPreview(); } return; }
-      selected = index; updateEditor(); renderTimeline(); drawPreview();
+      selected = index; updateEditor(); renderTimeline(); drawPreview(); setStatus(`Esta parte empieza en el segundo ${startsAt.toFixed(1)}`);
     };
     timeline.append(card);
   });
   const total = totalDuration(); byId("videoTotal").textContent = `${total.toFixed(1)} / ${MAX_SECONDS} s`; byId("videoTotal").classList.toggle("over", total > MAX_SECONDS);
+  const selectedStart = selected >= 0 ? items.slice(0, selected).reduce((sum, part) => sum + Number(part.duration || 0), 0) : null;
+  byId("selectedSecond").textContent = selectedStart === null ? "Selecciona una parte" : `Parte seleccionada: segundo ${selectedStart.toFixed(1)}`;
   updateEditor();
 }
 
 byId("deleteVideoPart").onclick = () => { if (selected < 0) return; const [removed] = items.splice(selected, 1); if (removed?.url) URL.revokeObjectURL(removed.url); selected = Math.min(selected, items.length - 1); generatedBlob = null; updateEditor(); renderTimeline(); drawPreview(); };
+
+byId("insertVideoPhoto").onclick = () => byId("insertVideoPhotoInput").click();
+byId("insertVideoPhotoInput").onchange = (event) => {
+  const file = event.target.files[0]; if (!file || !file.type.startsWith("image/")) return;
+  const inserted = { id: uid(), name: file.name, type: "image", blob: file, url: URL.createObjectURL(file), duration: 4, text: "", textColor: "#ffffff", textSize: 48, textX: .5, textY: .78, strokes: [] };
+  const position = selected >= 0 ? selected : items.length; items.splice(position, 0, inserted); selected = position; generatedBlob = null; event.target.value = "";
+  updateEditor(); renderTimeline(); drawPreview(); setStatus(`Foto insertada en el segundo ${items.slice(0, position).reduce((sum, part) => sum + Number(part.duration || 0), 0).toFixed(1)}`);
+};
 
 function renderEmojis() {
   const query = byId("emojiSearch").value.trim().toLowerCase();
@@ -331,7 +342,7 @@ async function renderFinishedVideos() {
     if (!videos.length) return holder.innerHTML = "<small>Todavía no hay vídeos guardados.</small>";
     videos.forEach((project) => {
       const row = document.createElement("article"); row.className = `finished-video ${project.used ? "is-used" : ""}`;
-      row.innerHTML = `<div class="finished-video-info"><b>${escapeHtml(project.name)}</b><small>Creado: ${formattedDate(project.created || project.updated)}${project.usedAt ? `<br>Usado: ${formattedDate(project.usedAt)}` : ""}</small></div><label class="used-check"><input type="checkbox" ${project.used ? "checked" : ""}> Ya lo he usado</label><div class="finished-video-actions"><button data-open>Abrir y modificar</button><button data-play>Ver</button><button data-download>Descargar</button><button data-delete class="mini-danger">×</button></div>`;
+      row.innerHTML = `<div class="finished-video-info"><b>${escapeHtml(project.name)}</b><small>Creado: ${formattedDate(project.created || project.updated)}${project.usedAt ? `<br>Usado: ${formattedDate(project.usedAt)}` : ""}</small></div><label class="used-check"><input type="checkbox" ${project.used ? "checked" : ""}> Ya lo he usado</label><div class="finished-video-actions"><button data-open>Abrir y modificar</button><button data-play>Ver</button><button data-download>Descargar</button><button data-delete class="mini-danger">Eliminar</button></div>`;
       row.querySelector(".used-check input").onchange = async (event) => { project.used = event.target.checked; project.usedAt = project.used ? Date.now() : null; await dbAction("readwrite", (store) => store.put(project)); renderFinishedVideos(); };
       row.querySelector("[data-open]").onclick = () => loadProject(project);
       row.querySelector("[data-play]").onclick = () => { const preview = byId("generatedVideo"); if (preview.src) URL.revokeObjectURL(preview.src); preview.src = URL.createObjectURL(project.generatedBlob); preview.hidden = false; preview.scrollIntoView({ behavior: "smooth", block: "center" }); preview.play().catch(() => undefined); };

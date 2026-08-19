@@ -1,4 +1,4 @@
-const C="fotos-github-v13",A=["./","./index.html","./app.css?v=13","./app.js?v=13","./video-studio.js?v=13","./manifest.webmanifest","./icon-192.png","./icon-512.png","./vendor/pdf.min.mjs","./vendor/pdf.worker.min.mjs","./vendor/jspdf.umd.min.js"];
+const C="fotos-github-v15",A=["./","./index.html","./app.css?v=15","./app.js?v=15","./video-studio.js?v=15","./manifest.webmanifest","./icon-192.png","./icon-512.png","./vendor/pdf.min.mjs","./vendor/pdf.worker.min.mjs","./vendor/jspdf.umd.min.js"];
 self.addEventListener("install",e=>{
   e.waitUntil(caches.open(C).then(c=>c.addAll(A)));
   self.skipWaiting();

@@ -50,6 +50,10 @@ aside label{font-size:10px;margin-bottom:5px}
   .file-open-group .primary{padding:7px;font-size:9px}
 }
 
+/* Texto más legible sin aumentar los botones del editor de vídeo. */
+.timeline-head>div{display:flex;align-items:center;gap:10px}.timeline-head #selectedSecond{color:var(--coral);font-size:11px}.studio-actions button{font-size:11px!important;line-height:1.05}.studio-add-row button,.draw-tools button,.saved-block>button{font-size:11px}.finished-video-actions button{font-size:10px}.timeline-card span{font-size:10px}.timeline-card small{font-size:9px}
+@media(max-width:760px){.timeline-card{flex-basis:170px}.timeline-head>div{gap:5px;flex-direction:column;align-items:flex-end}.timeline-head #selectedSecond{font-size:10px}.studio-actions{display:grid;grid-template-columns:1fr 1fr;gap:4px}.studio-actions button{width:100%;height:34px;padding:4px 2px;flex:none}}
+
 body.studio-open{overflow:hidden}
 .video-studio[hidden]{display:none!important}
 .video-studio{position:fixed;inset:0;z-index:100;background:#ece9e1;display:flex;flex-direction:column;color:var(--ink)}
@@ -96,3 +100,7 @@ body.studio-open{overflow:hidden}
   .file-actions button:disabled{display:none}
   .file-actions>button,.file-actions span button{height:27px;padding:4px 6px}
 }
+
+/* Ajustes finales del editor de vídeo. */
+.timeline-head>div{display:flex;align-items:center;gap:10px}.timeline-head #selectedSecond{color:var(--coral);font-size:11px}.studio-actions button{font-size:11px!important;line-height:1.05}.studio-add-row button,.draw-tools button,.saved-block>button{font-size:11px}.finished-video-actions button{font-size:10px}.timeline-card span{font-size:10px}.timeline-card small{font-size:9px}
+@media(max-width:760px){.timeline-card{flex-basis:170px}.timeline-head>div{gap:5px;flex-direction:column;align-items:flex-end}.timeline-head #selectedSecond{font-size:10px}.studio-actions{display:grid;grid-template-columns:1fr 1fr;gap:4px}.studio-actions button{width:100%;height:34px;padding:4px 2px;flex:none}}
