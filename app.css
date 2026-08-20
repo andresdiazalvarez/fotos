@@ -207,3 +207,19 @@ body.studio-open{overflow:hidden}
 /* Ajustes finales del editor de vídeo. */
 .timeline-head>div{display:flex;align-items:center;gap:10px}.timeline-head #selectedSecond{color:var(--coral);font-size:11px}.studio-actions button{font-size:11px!important;line-height:1.05}.studio-add-row button,.draw-tools button,.saved-block>button{font-size:11px}.finished-video-actions button{font-size:10px}.timeline-card span{font-size:10px}.timeline-card small{font-size:9px}
 @media(max-width:760px){.timeline-card{flex-basis:170px}.timeline-head>div{gap:5px;flex-direction:column;align-items:flex-end}.timeline-head #selectedSecond{font-size:10px}.studio-actions{display:grid;grid-template-columns:1fr 1fr;gap:4px}.studio-actions button{width:100%;height:34px;padding:4px 2px;flex:none}}
+
+/* Vista completa de la imagen en el editor de vídeo. */
+.video-preview-wrap{display:flex;align-items:center;justify-content:center;padding:8px}
+.video-preview-wrap canvas{display:block!important;width:auto!important;height:auto!important;max-width:100%!important;max-height:100%!important;aspect-ratio:9/16!important;flex:0 1 auto}
+
+/* Mantener claramente identificado el apartado de vídeos guardados. */
+.finished-videos{background:linear-gradient(135deg,#72d89e 0%,#2ea96f 52%,#12643d 100%);border:2px solid #176d43;color:#fff;box-shadow:0 8px 22px #176d4138}
+.finished-videos h3,.finished-videos>p,.finished-video-list>small{color:#fff}
+.finished-video{background:#f2fff7;border-color:#a4d8ba;color:#173d2a}
+.finished-video.is-used{background:#dff5e8;color:#173d2a}
+
+@media(max-width:760px){
+  .studio-workspace{grid-template-rows:min(68vh,520px) auto auto auto auto auto auto}
+  .video-preview-wrap{min-height:0;height:min(68vh,520px);padding:6px}
+  .video-preview-wrap canvas{width:auto!important;height:auto!important;max-width:100%!important;max-height:100%!important}
+}
